@@ -1,12 +1,28 @@
 'use strict';
 
-const { products } = require('./products');
+const { getAllStocks } = require('./stocksDBController');
+const { getAllProducts } = require('./productsDBController');
 
 const getProductsList = async () => {
+  console.log("getProductsList lambda was triggered\n" + JSON.stringify(event, null, 2));
+
   try {
+    const products = await getAllProducts();
+    const stocks = await getAllStocks();
+
+    const result = products.map(product => {
+      const relatedStock = stocks.find(stock => stock.product_id === product.id)
+
+      product.count = relatedStock
+        ? relatedStock.count
+        : null
+
+      return product
+    });
+
     return {
       statusCode: 200,
-      body: JSON.stringify(products),
+      body: JSON.stringify(result),
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true
