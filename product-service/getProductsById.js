@@ -4,6 +4,8 @@ const { getAllStocks } = require('./stocksDBController');
 const { getProductById } = require('./productsDBController');
 
 const getProductsById = async (event) => {
+  console.log("getProductsById lambda was triggered\n" + JSON.stringify(event, null, 2));
+
   try {
     const id = event.pathParameters.productId;
 

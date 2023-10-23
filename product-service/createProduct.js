@@ -6,6 +6,8 @@ const { addStock } = require('./stocksDBController');
 const { addProduct } = require('./productsDBController');
 
 const createProduct = async (event) => {
+  console.log("createProduct lambda was triggered\n" + JSON.stringify(event, null, 2));
+
   try {
     const body = JSON.parse(event.body);
     const productId = uuidv4();

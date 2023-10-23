@@ -4,6 +4,8 @@ const { getAllStocks } = require('./stocksDBController');
 const { getAllProducts } = require('./productsDBController');
 
 const getProductsList = async () => {
+  console.log("getProductsList lambda was triggered\n" + JSON.stringify(event, null, 2));
+
   try {
     const products = await getAllProducts();
     const stocks = await getAllStocks();
