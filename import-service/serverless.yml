@@ -20,6 +20,9 @@ provider:
             - "s3:*"
           Resource:
             - "arn:aws:s3:::kirv-import-service-bucket/*"
+        - Effect: Allow
+          Action: sqs:*
+          Resource: arn:aws:sqs:eu-central-1:750769084493:productQueue
 
 functions:
   importProductsFile:
