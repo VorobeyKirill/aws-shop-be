@@ -20,6 +20,16 @@ provider:
           Resource:
           - "arn:aws:dynamodb:${self:provider.region}:*:table/Products"
           - "arn:aws:dynamodb:${self:provider.region}:*:table/Stocks"
+        - Effect: "Allow"
+          Action: "sqs:*"
+          Resource:
+            Fn::GetAtt:
+              - SQSQueue
+              - Arn
+        - Effect: "Allow"
+          Action: "sns:*"
+          Resource:
+            Ref: "createProductTopic"
 
 functions:
   getProductsList:
@@ -48,31 +58,76 @@ functions:
           method: post
           cors: true
 
+  catalogBatchProcess:
+    handler: handler.catalogBatchProcess
+    event:
+      -sqs:
+        batchSize: 5
+        arn:
+          Fn::GetAtt:
+            - SQSQueue
+            - Arn
+
+
 resources:
   Resources:
     Products:
-        Type: 'AWS::DynamoDB::Table'
+        Type: "AWS::DynamoDB::Table"
         Properties:
-          TableName: 'Products'
+          TableName: "Products"
           AttributeDefinitions:
-            - AttributeName: 'id'
-              AttributeType: 'S'
+            - AttributeName: "id"
+              AttributeType: "S"
           KeySchema:
-            - AttributeName: 'id'
-              KeyType: 'HASH'
+            - AttributeName: "id"
+              KeyType: "HASH"
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
     Stocks:
-      Type: 'AWS::DynamoDB::Table'
+      Type: "AWS::DynamoDB::Table"
       Properties:
-        TableName: 'Stocks'
+        TableName: "Stocks"
         AttributeDefinitions:
-          - AttributeName: 'product_id'
-            AttributeType: 'S'
+          - AttributeName: "product_id"
+            AttributeType: "S"
         KeySchema:
-          - AttributeName: 'product_id'
-            KeyType: 'HASH'
+          - AttributeName: "product_id"
+            KeyType: "HASH"
         ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
+    SQSQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "productQueue"
+    createProductTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        TopicName: "create-product-topic"
+    createProductTopicSubscription:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+        Protocol: "email"
+        TopicArn:
+          Ref: "createProductTopic"
+        FilterPolicy:
+          price:
+            - "numeric":
+              - "<="
+              - 500
+        FilterPolicyScope: "MessageAttributes"
+        Endpoint: "vorobeykirill00@gmail.com"
+    createProductTopicSubscription2:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+        Protocol: "email"
+        TopicArn:
+          Ref: "createProductTopic"
+        FilterPolicy:
+          price:
+            - "numeric":
+              - ">"
+              - 500
+        FilterPolicyScope: "MessageAttributes"
+        Endpoint: "Kiril_Varabei@epam.com"

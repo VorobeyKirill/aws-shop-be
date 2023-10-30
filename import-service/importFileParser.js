@@ -4,6 +4,7 @@ const aws = require('aws-sdk');
 const csv = require('csv-parser');
 
 const s3 = new aws.S3();
+const sqs = new aws.SQS();
 
 const importFileParser = async (event) => {
   const bucketName = event.Records[0].s3.bucket.name;
@@ -20,7 +21,13 @@ const importFileParser = async (event) => {
             try {
                 const readStream = s3.getObject({ Bucket: bucketName, Key: key }).createReadStream();
                 readStream.pipe(csv())
-                .on('data', (data) => results.push(data))
+                .on('data', (data) => {
+                    results.push(data);
+                    sqs.sendMessage({
+                        QueueUrl: 'https://sqs.eu-central-1.amazonaws.com/750769084493/productQueue',
+                        MessageBody: JSON.stringify(data),
+                    })
+                })
                 .on('end', () => {
                     resolve(results);
                     console.log('Finish parsing file from S3 Bucket');
@@ -45,6 +52,11 @@ const importFileParser = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'File was successfull parsed and moved to the parsed folder' }),
+      headers: {
+        "Access-Control-Allow-Headers" : "Content-Type",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET,DELETE,PUT"
+      },
     };
   } catch (error) {
     return {
